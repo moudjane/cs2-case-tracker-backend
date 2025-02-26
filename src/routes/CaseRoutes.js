@@ -1,5 +1,5 @@
 import express from "express";
-import CasePrice from "../models/casePrice.js";
+import CasePrice from "../models/CasePrice.js";
 import cron from "node-cron";
 
 const router = express.Router();
@@ -16,7 +16,6 @@ const caseNames = [
   "Fracture Case"
 ];
 
-// Enregistrer ou mettre à jour le prix d'achat d'une caisse avec une date
 router.post("/purchase", async (req, res) => {
   const { caseName, purchasePrice, purchaseDate } = req.body;
   if (!caseName || purchasePrice == null || !purchaseDate) {
@@ -24,10 +23,8 @@ router.post("/purchase", async (req, res) => {
   }
 
   try {
-    // 1) On parse la date telle qu'elle est envoyée, sans forcer setHours(0,0,0,0)
     const parsedDate = new Date(purchaseDate);
 
-    // 2) On utilise cette date telle quelle dans la requête
     const updatedEntry = await CasePrice.findOneAndUpdate(
       { name: caseName, date: parsedDate },
       { purchasePrice: purchasePrice },
@@ -45,7 +42,6 @@ router.post("/purchase", async (req, res) => {
   }
 });
 
-// Récupérer l'historique des prix de toutes les caisses
 router.get("/history", async (req, res) => {
   try {
     const history = await CasePrice.find().sort({ date: 1 }).exec();
@@ -61,7 +57,6 @@ router.get("/history", async (req, res) => {
   }
 });
 
-// Automatiser la récupération des prix toutes les heures
 cron.schedule("*/10 * * * *", async () => {
   console.log("⏳ Mise à jour automatique des prix toutes les 10 minutes");
 
@@ -77,9 +72,8 @@ cron.schedule("*/10 * * * *", async () => {
           ? parseFloat(data.median_price.replace("€", "").replace(",", "."))
           : null;
         if (price !== null) {
-          // On enregistre la date/heure actuelle
           const now = new Date();
-          now.setSeconds(0, 0); // ✅ Supprime les millisecondes pour une meilleure précision
+          now.setSeconds(0, 0);
           await CasePrice.create({ name: caseName, price, date: now });
           console.log(`✅ Prix enregistré pour ${caseName} : ${price}€`);
         }
